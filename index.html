@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="jquery-1.11.3.min.js"></script>
+</head>
+<body>
+    <div id="header">
+         <input id="nx" type="text" value="50">行
+         <input id="ny" type="text" value="50">列
+         <button id="set_map" onclick="reload()">设定画布</button>
+         <button id="start" onclick="stop()">开始</button>
+         <button id="clean" onclick="clean()">清空</button>
+     </div> 
+     <div id="map" style="position:relative">
+     </div>
+</body>
+<script>
+    var nx,ny,matrix,running
+    running  = false
+    dead = false
+    alive = true
+    size = 9
+
+    function stop(){
+        if(running){
+            running  = false
+            $("#start").text("开始")
+        }
+        else{
+            running  = true
+            $("#start").text("暂停")
+            loop()
+        }
+    }
+
+    function reload(){
+       // set matrix and set to dead
+       nx = $("#nx").val()
+       ny = $("#ny").val()
+        $("#map").empty();
+        matrix = new Array(nx+2)
+        for (var i = nx+1; i >= 0; i--) {
+            matrix[i] = new Array(ny+2)
+            for (var j = ny+1; j >= 0; j--) {
+                matrix[i][j] = dead;
+            };
+        };
+        //create divs 
+        for (var y = 1; y<=ny ; y++){
+            for  (var x = 1; x <= nx; x++) {
+                var pix_left = size*(x-1)
+                var pix_top = size*(y-1)
+                var pix_id =  x+"_"+y
+                var pix_style = "top: "+pix_top+"px; left: "+pix_left+"px;"
+                var pix_onclick = "Click("+x+","+y+")"
+                $("#map").append($("<div/>", { id: pix_id, class: "dead",style:pix_style,onclick:pix_onclick}))
+            };
+        };
+        running = true
+        stop()
+    }
+
+    function clean(){
+        reload()
+    }
+
+
+    function loop() {
+        if(false == running){
+            return
+        }
+
+        var matrix_t = new Array(nx+2)
+        for (var i = nx+1; i >= 0; i--) {
+            matrix_t[i] = new Array(ny+2)
+            for (var j = ny+1; j >= 0; j--) {
+                matrix_t[i][j] = 0;
+            };
+        };
+
+        for (x=1;x<=nx;x++){
+            for(y=1;y<=ny;y++){
+                if (matrix[x][y] == alive){
+                    matrix_t[x-1][y-1]++
+                    matrix_t[x-1][y  ]++
+                    matrix_t[x-1][y+1]++
+                    matrix_t[x  ][y-1]++
+                    matrix_t[x  ][y+1]++
+                    matrix_t[x+1][y-1]++
+                    matrix_t[x+1][y  ]++
+                    matrix_t[x+1][y+1]++
+                }
+            }
+        }
+
+        for (x=1;x<=nx;x++){
+            for(y=1;y<=ny;y++){
+                if (matrix_t[x][y] == 2){
+
+                }
+                else if (matrix_t[x][y] == 3){
+                    matrix[x][y] = alive
+                }
+                else{
+                    matrix[x][y] = dead
+                }
+            }
+        }
+
+        for (x=1;x<=nx;x++){
+            for(y=1;y<=ny;y++){
+                ///
+                id  = "#"+x+"_"+y
+                pix = $(id)
+                if (matrix[x][y] == alive){
+                    pix.attr("class", "alive")
+                }
+                else{
+                    pix.attr("class", "dead")
+                }
+
+
+            }
+        }
+
+
+        setTimeout(function () {
+            loop();
+        }, 100);
+    }
+    function Click(x,y){
+        //if(true == running){return}
+        id  = "#"+x+"_"+y
+        pix = $(id)
+        matrix[x][y] = !matrix[x][y]
+
+        pix.toggleClass("alive dead")
+
+
+    }
+
+
+</script>
+</html>

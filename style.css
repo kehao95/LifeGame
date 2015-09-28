@@ -1,0 +1,28 @@
+input
+{
+   width: 24px; 
+}
+.alive
+{
+    position: absolute;
+    background-color: black;
+    height: 8px;
+    width: 8px;
+    border-width: 1px;
+    border-color: gray;
+    border-style: solid;
+
+
+}
+.dead
+{
+    position: absolute;
+    background-color: white;
+    height: 8px;
+    width: 8px;
+    border-width: 1px;
+    border-color: gray;
+    border-style: solid;
+
+
+}
