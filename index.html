@@ -9,11 +9,26 @@
 </head>
 <body>
     <div id="header">
+         <input id="rowCount" type="text" value="50">列
          <input id="columnCount" type="text" value="50">行
-         <input id="rowCount" type="text" value="30">列
          <button id="set_map" onclick="reload()">设定画布</button>
          <button id="stop" onclick="stop()">开始</button>
          <button id="clean" onclick="clean()">清空</button>
+		 <div id="mode">
+			现在为设置<span id="mode_now">细胞</span>模式，<button id="change_mode" onclick="change_mode()">点此</button>切换为设置<span id="mode_to">墙壁</span>模式
+		 </div>
+		 <div id="r_s" style="display:none;">
+			按照概率（大于0,小于1）
+			<input id="probability" type="text" value="0.5">
+			随机生成活细胞，
+			<button id="random_set" onclick="random_set()">随机生成</button>
+			<br>
+			设置刷新间隔为
+			<input id="timer" type="text" value="300">
+			毫秒
+			<button id="set_timer" onclick="set_timer()">确定</button>
+		 </div>
+
      </div> 
      <div id="map" >
      </div>

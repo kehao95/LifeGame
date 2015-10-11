@@ -26,3 +26,13 @@ input
 
 
 }
+#mode span
+{
+	font-weight: bold;
+}
+
+#map
+{
+	position: absolute;
+    top:150px;
+}

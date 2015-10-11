@@ -1,8 +1,11 @@
 var rowCount,columnCount,matrix,running
     running  = false
-    dead = false
-    alive = true
-    cellSize = 7
+
+    dead = 0
+    alive = 1
+    wall = 2
+
+    cellSize = 13
     canvas =null
     drawingContext=null
     ///
@@ -10,16 +13,75 @@ var rowCount,columnCount,matrix,running
     deadStyle = "#FFFFFF"
     wallStyle = "#000088"
     seedProbability = 0.5
+    mode = 0  //0为设置细胞模式，1为设置墙模式
+    cell_mode = 0
+    wall_mode = 1
+    timer = 300 //刷新周期（ms）
+    DX = [ 0, 0, 0, 0,-2,-1, 1, 2]
+    DY = [-2,-1, 1, 2, 0, 0, 0, 0]
 
+    function draw_cell(){
+        drawingContext.fillStyle = deadStyle
+        drawingContext.fillRect(0, 0, canvas.width,canvas.height)
+            for (row=2;row<=rowCount+1;row++){
+                for(col=2;col<=columnCount+1;col++){
+                    ///
+                    x = (row-2)*cellSize
+                    y = (col-2)*cellSize
+                    if (matrix[row][col] == alive){
+                        drawingContext.fillStyle = aliveStyle
+                    }
+                    else if (matrix[row][col] == dead){
+                        continue;
+                        drawingContext.fillStyle = deadStyle
+                    }
+                    else{
+                        drawingContext.fillStyle = wallStyle
+                    }
+                    drawingContext.fillRect(x, y,cellSize,cellSize)    
+                }
+            }
+    }
+    function draw_grid(){
+        drawingContext.strokeStyle = '#808080'
+        for (var col = 0; col <= columnCount; col++) {
+            drawingContext.moveTo(0, col * cellSize)
+            drawingContext.lineTo(canvas.width, col * cellSize)
+        }
+        for (var row = 0; row <= rowCount; row++) {
+            drawingContext.moveTo(row * cellSize,0)
+            drawingContext.lineTo(row * cellSize,canvas.height )
+        }
+        drawingContext.lineWidth =1
+        drawingContext.stroke()
+
+    }
+    
     function stop(){
         if(running){
             running  = false
             $("#stop").text("开始")
+            $("#r_s").css("display", "block")
         }
         else{
             running  = true
             $("#stop").text("暂停")
+            $("#r_s").css("display", "None")
             loop()
+        }
+        
+    }
+    
+    function change_mode(){
+        if (mode == cell_mode){
+            mode = wall_mode
+            $('#mode_now').text("墙壁")
+            $('#mode_to').text("细胞")
+        }
+        else if (mode == wall_mode){
+            mode = cell_mode
+            $('#mode_now').text("细胞")
+            $('#mode_to').text("墙壁")
         }
     }
 
@@ -27,11 +89,11 @@ var rowCount,columnCount,matrix,running
         rowCount = $("#rowCount").val()
         columnCount = $("#columnCount").val()
         function set_matrix(){
-            matrix = new Array(rowCount+2)
-            for (var i = rowCount+1; i >= 0; i--) {
-                matrix[i] = new Array(columnCount+2)
-                for (var j = columnCount+1; j >= 0; j--) {
-                    matrix[i][j] = (Math.random() < seedProbability)
+            matrix = new Array(rowCount+4)
+            for (var i = rowCount+3; i >= 0; i--) {
+                matrix[i] = new Array(columnCount+4)
+                for (var j = columnCount+3; j >= 0; j--) {
+                    matrix[i][j] = dead
                 };
             };
         }       
@@ -49,9 +111,38 @@ var rowCount,columnCount,matrix,running
         set_map()      
         canvas.addEventListener('click', function(evt) {
             var mousePos = getMousePos(canvas, evt);
-            alert("x: "+ mousePos.x+" y:"+mousePos.y)
+            click_cell( 1+parseInt(mousePos.x / cellSize), 1+parseInt(mousePos.y / cellSize))
         }, false);  
         running = true
+        stop()
+        $("#r_s").css("display", "block")
+    }
+    
+    function random_set(){
+        rowCount = $("#rowCount").val()
+        columnCount = $("#columnCount").val()
+        seedProbability = Number($("#probability").val())
+        if (isNaN(seedProbability)){
+            alert("请输入一个大于0小于1的数！")
+            return
+        }
+        else if (seedProbability <= 0 || seedProbability >=1){
+            alert("请输入一个大于0小于1的数！")
+            return
+        }
+        function set_matrix(){
+            matrix = new Array(rowCount+2)
+            for (var i = rowCount+1; i >= 0; i--) {
+                matrix[i] = new Array(columnCount+2)
+                for (var j = columnCount+1; j >= 0; j--) {
+                    matrix[i][j] = (Math.random() < seedProbability)
+                };
+            };
+        }       
+        set_matrix()     
+        running = true
+        draw_cell()
+        draw_grid()
         stop()
     }
 
@@ -59,6 +150,20 @@ var rowCount,columnCount,matrix,running
         reload()
     }
 
+    function set_timer(){
+        var timer_t = Number($("#timer").val())
+        if (isNaN(timer_t)){
+            alert("请输入一个大于0的数！")
+            return
+        }
+        else if (seedProbability <= 0){
+            alert("请输入一个大于0的数！")
+            return
+        }
+        else{
+            timer = timer_t
+        }
+    }
 
     function loop() {
         if(false == running){
@@ -66,31 +171,28 @@ var rowCount,columnCount,matrix,running
         }
         function envolve_cells(){
             // set the temp matrix
-            matrix_t = new Array(rowCount+2)
-            for (var i = rowCount+1; i >= 0; i--) {
-                matrix_t[i] = new Array(columnCount+2)
-                for (var j = columnCount+1; j >= 0; j--) {
+            matrix_t = new Array(rowCount+4)
+            for (var i = rowCount+3; i >= 0; i--) {
+                matrix_t[i] = new Array(columnCount+4)
+                for (var j = columnCount+3; j >= 0; j--) {
                     matrix_t[i][j] = 0;
                 };
             };  
-            for (x=1;x<=rowCount;x++){
-                for(y=1;y<=columnCount;y++){
+            for (var x=2;x<=rowCount+1;x++){
+                for(var y=2;y<=columnCount+1;y++){
                     if (matrix[x][y] == alive){
-                        matrix_t[x-1][y-1]++
-                        matrix_t[x-1][y  ]++
-                        matrix_t[x-1][y+1]++
-                        matrix_t[x  ][y-1]++
-                        matrix_t[x  ][y+1]++
-                        matrix_t[x+1][y-1]++
-                        matrix_t[x+1][y  ]++
-                        matrix_t[x+1][y+1]++
+                        
+                        for (var i = 0; i < 8; i++){
+                            matrix_t[x+DX[i]][y+DY[i]]++
+                        }
+                        
                     }
                 }
             }
-            for (x=1;x<=rowCount;x++){
-                for(y=1;y<=columnCount;y++){
-                    if (matrix_t[x][y] == 2){
-
+            for (var x=2;x<=rowCount+1;x++){
+                for(var y=2;y<=columnCount+1;y++){
+                    if ((matrix[x][y] == wall) ||(matrix_t[x][y] == 2)){
+                        continue
                     }
                     else if (matrix_t[x][y] == 3){
                         matrix[x][y] = alive
@@ -101,73 +203,40 @@ var rowCount,columnCount,matrix,running
                 }
             }       
         }
-        function draw_cell(){
-        drawingContext.fillStyle = deadStyle
-        drawingContext.fillRect(0, 0, canvas.width,canvas.height)
-            for (row=1;row<=rowCount;row++){
-                for(col=1;col<=columnCount;col++){
-                    ///
-                    x = (row-1)*cellSize
-                    y = (col-1)*cellSize
-                    if (matrix[row][col] == alive){
-                        drawingContext.fillStyle = aliveStyle
-                    }
-                    else if (matrix[row][col] == dead){
-                        continue;
-                        drawingContext.fillStyle = deadStyle
-                    }
-                    else{
-                        drawingContext.fillStyle = wallStyle
-                    }
-                    drawingContext.fillRect(x, y,cellSize,cellSize)    
-                }
-            }
-        }
        
         envolve_cells()        
         draw_cell()
         draw_grid()
         setTimeout(function () {
             loop();
-        }, 100);
+        }, timer);
     }
-    function Click(x,y){
-        //if(true == running){return}
-        id  = "#"+x+"_"+y
-        pix = $(id)
-        matrix[x][y] = !matrix[x][y]
-
-        pix.toggleClass("alive dead")
-    }
-    function draw_grid(){
-        /*
-        for (var col = 0; col <= columnCount; col++) {
-            for (var row = 0; row <= rowCount; row++) {
-                x = row * cellSize;
-                y = col * cellSize;
-                drawingContext.strokeStyle = 'rgba(80,80,80, 0.6)'
-                drawingContext.strokeRect(x, y, cellSize, cellSize)
-            }             
-        };
-        */
-        drawingContext.strokeStyle = 'rgba(80,80,80, 0.6)'
-        for (var col = 0; col <= columnCount; col++) {
-            drawingContext.moveTo(0, col * cellSize)
-            drawingContext.lineTo(canvas.width, col * cellSize)
-        }
-        for (var row = 0; row <= rowCount; row++) {
-            drawingContext.moveTo(row * cellSize,0)
-            drawingContext.lineTo(row * cellSize,canvas.height )
-        }
-        drawingContext.lineWidth =1
-        drawingContext.stroke()
-
-    }
-    function getMousePos(canvas, event)
-    {
-        var mouseX = event.pageX - canvas.offsetLeft;
-        var mouseY = event.pageY - canvas.offsetTop;
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
         return {
-            x: mouseX,
-            y: mouseY };
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+        };
+    }
+    function click_cell(x,y){
+        if (mode == cell_mode){
+            if(matrix[x+1][y+1] == alive){
+                matrix[x+1][y+1] = dead
+            }
+            else
+            {
+                 matrix[x+1][y+1] = alive
+            }
+        }
+        if (mode == wall_mode){
+            if(matrix[x+1][y+1] == wall){
+                matrix[x+1][y+1] = dead
+            }
+            else
+            {
+                 matrix[x+1][y+1] = wall
+            }
+        }
+        draw_cell()
+        draw_grid()
     }
